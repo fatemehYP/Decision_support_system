@@ -1,5 +1,4 @@
 import csv
-import ipdb
 import math
 from helper import ownship_position, area_focus_votter, updown_rannge_calculator, aspect_votter, \
     collision_time_determinor, get_point, calc_dist_from_target

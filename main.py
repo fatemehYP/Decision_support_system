@@ -4,7 +4,6 @@ from helper import BLabel
 from functools import partial
 from scenario_page import PlayScenario
 import logging
-import ipdb
 
 
 def resize_image(img, root):

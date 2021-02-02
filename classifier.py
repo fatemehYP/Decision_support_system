@@ -7,7 +7,6 @@ import numpy as np
 from matplotlib import style
 import matplotlib.pyplot as plt
 import pandas as pd
-import ipdb
 
 class_weight = {0: 0.2, 1: 0.2, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.45, 6: 0.4, 7: 0.25, 8: 0.7, 9: 1,
                 10: 0.8, 11: 0.6}

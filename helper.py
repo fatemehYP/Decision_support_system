@@ -1,7 +1,6 @@
 import math
 import tkinter as tk
 import xml.etree.cElementTree as ET
-import ipdb
 
 angle_pos_key = {"top": ["top_right", "top_left"], "bottom": ["btm_right", "btm_left"],
                  "left": ["top_left", "btm_left"], "right": ["btm_right", "top_right"],
