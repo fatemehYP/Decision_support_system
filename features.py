@@ -1,4 +1,5 @@
 import csv
+import ipdb
 import math
 from helper import ownship_position, area_focus_votter, updown_rannge_calculator, aspect_votter, \
     collision_time_determinor, get_point, calc_dist_from_target
@@ -31,8 +32,31 @@ class Features:
     def aspect_calculator(self):
 
         aspect_vot_dict = {"up_current": 0, "J_approach": 0, "direct": 0}
-        # this 241 is for 3 minutes of the logfile to be considered for determining the aspect of the ownship
-        for sec in range(0, 241, 1):
+        # this 241 is for 4 minutes of the logfile to be considered for determining the aspect of the ownship
+
+        # if self.scenario=="":
+        #     i = 0
+        #     while self.log_objects[i].longitude > 146.35541:
+        #         ownship_pos = ownship_position(self.scenario, self.log_objects[i].latitude,
+        #                                        self.log_objects[i].longitude)
+        #         down_heading, up_heading = updown_rannge_calculator(self.log_objects[i].latitude,
+        #                                                             self.log_objects[i].longitude,
+        #                                                             self.scenario, ownship_pos)
+        #         degree = (down_heading, up_heading)
+        #
+        #         updated_aspect_vot_dict = aspect_votter(self.log_objects, i, aspect_vot_dict, degree, self.scenario)
+        #         i += 1
+        #
+        #     if updated_aspect_vot_dict:
+        #         print(updated_aspect_vot_dict)
+        #
+        #         paires = [(value, key) for key, value in updated_aspect_vot_dict.items()]
+        #
+        #     else:
+        #         self.logger.info("The dictionary for aspect_calculation didn't get updated!(Check features.py module)")
+        #     self.aspect = max(paires)[1]
+        # else:
+        for sec in range(0, 240, 1):
             ownship_pos = ownship_position(self.scenario, self.log_objects[sec].latitude,
                                            self.log_objects[sec].longitude)
             down_heading, up_heading = updown_rannge_calculator(self.log_objects[sec].latitude,
@@ -40,9 +64,10 @@ class Features:
                                                                 self.scenario, ownship_pos)
             degree = (down_heading, up_heading)
 
-            updated_aspect_vot_dict = aspect_votter(self.log_objects, sec, aspect_vot_dict, degree)
+            updated_aspect_vot_dict = aspect_votter(self.log_objects, sec, aspect_vot_dict, degree, self.scenario)
 
         if updated_aspect_vot_dict:
+            print(updated_aspect_vot_dict)
 
             paires = [(value, key) for key, value in updated_aspect_vot_dict.items()]
 
@@ -92,18 +117,18 @@ class Features:
                 self.orientation = "stern"
 
     # to calculate the distance between two coordinates(lat,long). first we need to convert the (lat,long) to (x,y)
-    # which is the cartesian coordinates then calculate the distance. with tha said the equation "the calc_dist_from_target"
+    # which is the cartesian coordinates. then calculate the distance. with that said, the equation "the calc_dist_from_target"
     # had used to get the distance between two (lat,long) coordinates directly.
     def distance_calculator(self):
         count = 0
-        for num in range(500, 901, 1):
+        for num in range(self.time_stamp - 400, self.time_stamp, 1):
             distances_list = calc_dist_from_target(self.log_objects[num].latitude,
                                                    self.log_objects[num].longitude,
                                                    self.scenario)
 
             self.distance_from_target = min(distances_list)
             count += self.distance_from_target
-        print(f"this is distance{count / 400}")
+        print(f"this is distance {count / 400}")
 
     def area_of_focus_determinor(self):
         area_of_focus_dict = {"av": 0, "z": 0, "az": 0, "along_zone": 0}
@@ -111,46 +136,66 @@ class Features:
         for timeslip in range(0, self.time_stamp + 1, 1):
             area_of_focus_dict = area_focus_votter(self.scenario, self.log_objects[timeslip], area_of_focus_dict)
         paires = [(value, key) for key, value in area_of_focus_dict.items()]
+        print(area_of_focus_dict)
 
         self.area_of_focus = max(paires)[1]
 
     # Thi function will create a dictionary to check what was the ownship heading from 3 minutes before requesting assistance.
     # Then based on this dictionary, the most occurance will be considered as the ownship heading!
     def heading_calculator(self):
-        heading_dict = {"perpendicular": 0, "stem": 0, "angle": 0}
         if self.time_stamp - 180 < 0:
-            print("Raise an warning to let the user know this is not an appropriate time to get assistance!")
+            self.logger.info("the user asked an assistance at a n inappropriate time! (Not recommended)")
+        heading_dict = {"perpendicular": 0, "stem": 0, "angle": 0}
+        if self.scenario == "emergency":
+            for sec in range(self.time_stamp - 360, self.time_stamp + 1, 1):
+                if 103 <= self.log_objects[self.time_stamp].heading <= 123 or 283 <= self.log_objects[
+                    self.time_stamp].heading <= 303:
+                    heading_dict.update({"perpendicular": heading_dict["perpendicular"] + 1})
+                elif 13 <= self.log_objects[self.time_stamp].heading <= 33 or 193 <= self.log_objects[
+                    self.time_stamp].heading <= 213:
+                    heading_dict.update({"stem": heading_dict["stem"] + 1})
+                else:
+                    heading_dict.update({"angle": heading_dict["angle"] + 1})
+
+
         else:
             for sec in range(self.time_stamp - 180, self.time_stamp + 1, 1):
-                if 350 <= self.log_objects[
-                    self.time_stamp].heading <= 360 or 0 <= self.log_objects[self.time_stamp].heading <= 10 or 170 <= \
+                if self.scenario == "emergency":
+                    angle = self.log_objects[self.time_stamp].heading + 23
+                    self.log_objects[self.time_stamp].heading = angle
+                    if angle < 0:
+                        angle = 360 + angle
+                        self.log_objects[self.time_stamp].heading = angle
+                if 350 <= self.log_objects[self.time_stamp].heading <= 360 or 0 <= self.log_objects[
+                    self.time_stamp].heading <= 10 or 170 <= \
                         self.log_objects[
                             self.time_stamp].heading <= 190:
-                    heading_dict.update({"stem": heading_dict["stem"] + 1, "perpendicular": 0, "angle": 0})
+                    heading_dict.update({"stem": heading_dict["stem"] + 1})
                     # self.heading = ("stem", self.log_objects[self.time_stamp].heading)
 
                 elif 80 <= self.log_objects[self.time_stamp].heading <= 100 or 260 <= self.log_objects[
                     self.time_stamp].heading <= 280:
-                    heading_dict.update({"perpendicular": heading_dict["perpendicular"] + 1, "stem": 0, "angle": 0})
+                    heading_dict.update({"perpendicular": heading_dict["perpendicular"] + 1})
                     # self.heading = ("perpendicular", self.log_objects[self.time_stamp].heading)
                 else:
-                    heading_dict.update({"perpendicular": 0, "stem": 0, "angle": heading_dict["angle"] + 1})
+                    heading_dict.update({"angle": heading_dict["angle"] + 1})
                     # self.heading = ("angle", self.log_objects[self.time_stamp].heading)
-            paires = [(value, key) for key, value in heading_dict.items()]
-            heading = max(paires)[1]
-            self.heading = (heading, self.log_objects[self.time_stamp].heading)
+        paires = [(value, key) for key, value in heading_dict.items()]
+        heading = max(paires)[1]
+        print(heading_dict)
+        self.heading = (heading, self.log_objects[self.time_stamp].heading)
 
     def speed_calculator(self):
-
-        count = 0
-        for num in range(901):
-            count += self.log_objects[num].sog
-        print(f"this is speed average{count / 900}")
 
         if self.log_objects[self.time_stamp].sog <= 3:
             self.speed = ("safe", self.log_objects[self.time_stamp].sog)
         else:
             self.speed = ("dangerous", self.log_objects[self.time_stamp].sog)
+
+        count = 0
+        for num in range(self.time_stamp + 1):
+            count += self.log_objects[num].sog
+        print(f"this is speed average{count / self.time_stamp} and is {self.speed[0]}")
 
     def ice_technique_determinor(self):
         technique_dict = {"prop_wash": 0, "leeway": 0, "pushing": 0, "other": 0}

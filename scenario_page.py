@@ -12,6 +12,7 @@ import xml.etree.cElementTree as ET
 import csv
 from tkinter import messagebox
 import logging
+import ipdb
 
 engine_dic = {"pEngine": 0, "fTunnelThruster": 0, "sEngine": 0, "aTunnelThruster": 0}
 rudder_dic = {"pRudder": 0, "sRudder": 0}
@@ -44,15 +45,18 @@ class PlayScenario:
 
     # this function will make the TraceData file well_formed to be ready for parsing.
     def log_reader(self):
+        current_path = os.getcwd()
+        wl_frmd_trcdt_path = current_path + "/well_formed_TraceData.log"
         try:
-            well_formed_tracedata = open('/Users/Fatemeh/fatemeh_recovered/my_master_thesis/final_DSS_project/DSS/well_formed_TraceData.log',
+
+            well_formed_tracedata = open(wl_frmd_trcdt_path,
                                          "w+")
         except FileNotFoundError as e:
 
             self.logger.info("Well_formed_TraceData.log haven't been created!")
 
         try:
-            f = open('/Users/Fatemeh/fatemeh_recovered/my_master_thesis/final_DSS_project/DSS/TraceData.log', 'r')
+            f = open(current_path + '/TraceData.log', 'r')
             linelist = f.readlines()
             for line in linelist:
 
@@ -67,13 +71,14 @@ class PlayScenario:
 
         return well_formed_tracedata.name
 
-    # This function will generate a csv file based on the TraceData logfile!
+    # This function will generate a csv file based on the TraceDtaa logfile!
     def generate_csv_file(self, log_objects):
+        current_path = os.getcwd()
         fields_name = ["SimTime", "Latitude", "Longitude", "SOG", "COG", "Heading", "AftThruster",
                        "ForeThruster",
                        "PortEngine", "StbdEngine", "PortRudder", "StbdRudder"]
         try:
-            with open('/Users/Fatemeh/fatemeh_recovered/my_master_thesis/final_DSS_project/DSS/csv_interpolatedLog.csv', "w+") as logfile_csv:
+            with open(current_path + '/csv_interpolatedLog.csv', "w+") as logfile_csv:
                 csv_writer = csv.DictWriter(logfile_csv, fieldnames=fields_name)
                 csv_writer.writeheader()
                 for line_num in range(len(log_objects)):
@@ -101,8 +106,8 @@ class PlayScenario:
 
         try:
             xml_file = ET.parse(well_formed_filename).getroot()
-        except FileNotFoundError as fnf_error:
-            print(fnf_error)
+        except IOError:
+        # except FileNotFoundError as fnf_error:
             self.logger.info("The well_formed_TraceData.log cannot be parsed! it seems there is no such a file!")
 
         for log_entity in xml_file.iter("log_entity"):
@@ -148,6 +153,7 @@ class PlayScenario:
             answer = messagebox.askokcancel(title="Proceed OR Quit",
                                             message="getting Assistance at a early time is not recommended! Do you want to continue?")
         if (instant_second < 180 and answer) or instant_second > 180:
+            print(instant_second)
             self.generate_csv_file(log_objects)  # this will generate a csv file based on DataTrace file
             self.features = Features(log_objects, self.scenario, self.logger,
                                      instant_second)  # this line will create the features at the time of asking asssistance

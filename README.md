@@ -1,4 +1,4 @@
-#This is a Decision support system software to assist the seafarer when they request for help.
+#This script is for extracting and calculating the required featured need to assist the seafarer when they request for assist.
 for running the project follow the steps bellow:
 * virtualenv venv
 * source venv/bin/activate
