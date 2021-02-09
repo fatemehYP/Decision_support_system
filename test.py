@@ -179,3 +179,22 @@ def init_page(root):
     label.add_option("Ice: 0.3-0.7m first year ice")
     # label.l.place(relx=0.5, rely=0.5, anchor="center")
     root.mainloop()
+
+    {"lat_top_left": 60.51116,
+     "long_top_left": 146.35677,
+     "lat_top_right": 60.51116,
+     "long_top_right": 146.35300,
+     "lat_btm_left": 60.50930,
+     "long_btm_left": 146.35677,
+     "lat_btm_right": 60.50930,
+     "long_btm_right": 146.35300, "center_trgt_lat": 60.51023040,
+     "center_trgt_long": 146.35488790}
+
+    {"lat_top_left": 60.51117,
+     "long_top_left": 146.35678,
+     "lat_top_right": 60.51117,
+     "long_top_right": 146.35299,
+     "lat_btm_left": 60.50930,
+     "long_btm_left": 146.35678,
+     "lat_btm_right": 60.50930,
+     "long_btm_right": 146.35299},
