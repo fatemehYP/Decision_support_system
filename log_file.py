@@ -17,6 +17,16 @@ class CsvFile:
         self.stbdengine = stbdengine
         self.portrudder = portrudder
         self.stbdrudder = stbdrudder
+ 
+## Populate a CsvFile from the contents of a Python dictionary (dict) 
+        @classmethod
+        def fromDict(cls, dict):
+            return cls((int(dict["SimTime"]),
+                        abs(dict["Lat"]), abs(dict["Long"]),
+                        dict["SOG"], dict["COG"], float(dict["Heading"]),
+                        dict["Aft"], dict["Fore"],
+                        dict["PortEngine"], dict["StbdEngine"],
+                        dict["PortRudder"], dict["StbdRudder"] ))
 
 
 class CsvRowsOperator:

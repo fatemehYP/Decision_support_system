@@ -5,6 +5,7 @@ from functools import partial
 from scenario_page import PlayScenario
 import logging
 import ipdb
+import sys
 
 
 def resize_image(img, root):
@@ -31,7 +32,7 @@ def start_scenario(pushing_frame, leeway_frame, emergency_frame, scenario, main_
     go_back_button = tk.Button(root, text="Back To Main Menue", width=20, height=3, anchor="c", command=get_back,
                                bg="gray")
     go_back_button.place(relx=0.5, rely=0.05, anchor="center")
-    scenario_obj = PlayScenario(root, main_frame, scenario, logger)
+    scenario_obj = PlayScenario(root, main_frame, scenario, logger, isRealTime)
     scenario_obj.init_page()
 
 
@@ -195,6 +196,12 @@ if __name__ == "__main__":
     console = logging.StreamHandler()  # this is to let logger knows to write it into log file instead of terminal
     console.setLevel(logging.INFO)
     logger.addHandler(console)
+    
+    isRealTime = False
+    for i, arg in enumerate(sys.argv):
+        if arg == "-realTime":
+            isRealTime = True
+            print("Command Arg -realTime detected " + str(isRealTime))
 
     root = tk.Tk()
     root.title("DSS")
