@@ -7,6 +7,7 @@ Created on Fr 6 Nov 8:27:27 2020
 import tkinter as tk
 from log_file import CsvFile
 from features import Features
+from simReceiver import SimReceiver
 import os
 import xml.etree.cElementTree as ET
 import csv
@@ -26,7 +27,7 @@ feature_keis = {"solo": 0, "combo": 1, "p": 0, "pw+l": 1, "l": 2, "p+l": 3, "pw"
 
 class PlayScenario:
 
-    def __init__(self, root, main_frame, scenario, logger):
+    def __init__(self, root, main_frame, scenario, logger, isRealTime):
         self.root = root
         self.main_frame = main_frame
         self.scenario = scenario
@@ -34,6 +35,11 @@ class PlayScenario:
         self.main_frame_width = self.main_frame.winfo_width()
         self.main_frame_height = self.main_frame.winfo_height()
         self.features = None
+        self.log_objects = []
+        self.isRealTime = isRealTime
+        
+        if isRealTime:
+            self.simReceiver = SimReceiver(self)
 
         # self.suggested_speed = None
         # self.suggested_heading = None
@@ -42,6 +48,10 @@ class PlayScenario:
         # self.suggested_orientation = None
         # self.suggested_distance_target = None
         # self.suggested_maneuver = None
+ 
+## When logs come in from the network, they'll land here.   
+    def addLogLine(self, csvLine):
+        log_objects.append(csvLine)
 
     # this function will make the TraceData file well_formed to be ready for parsing.
     def log_reader(self):
@@ -100,62 +110,66 @@ class PlayScenario:
     # this function is aimed to parse the log file and iterate into the file to  fill the log_objects list in which,
     # each object is a row for our csv file to be generated
     def assist(self):
-        i = 0
-        log_objects = []
-        well_formed_filename = self.log_reader()
+    
+        # Only real the cached log files if we're not collected realtime data
+        if not self.isRealTime:
+            i = 0
+            well_formed_filename = self.log_reader()
 
-        try:
-            xml_file = ET.parse(well_formed_filename).getroot()
-        except IOError:
-        # except FileNotFoundError as fnf_error:
-            self.logger.info("The well_formed_TraceData.log cannot be parsed! it seems there is no such a file!")
+            try:
+                xml_file = ET.parse(well_formed_filename).getroot()
+            except IOError:
+            # except FileNotFoundError as fnf_error:
+                self.logger.info("The well_formed_TraceData.log cannot be parsed! it seems there is no such a file!")
 
-        for log_entity in xml_file.iter("log_entity"):
-            if log_entity.attrib["SimTime"] == "0":
-                continue
-            if float(log_entity.attrib["SimTime"]) > i:
-                for index, element in enumerate(log_entity):
-                    for item in element.items():
-                        if item:
-                            if index == 0:
-                                engine_dic.update({item[0]: float(item[1])})
-                            elif index == 1:
-                                rudder_dic.update({item[0]: float(item[1])})
-                aftthruster = engine_dic["aTunnelThruster"]
-                forethruster = engine_dic["fTunnelThruster"]
-                portengine = engine_dic["pEngine"]
-                stbdengine = engine_dic["sEngine"]
-                portrudder = rudder_dic["pRudder"]
-                stbdrudder = rudder_dic["sRudder"]
-                # in the tarceData file the longitude and lattitude was wirten visa verca, So their placed were changed to save them correct.
-                csv_obj = CsvFile(int(float(log_entity.attrib["SimTime"])),
-                                  abs(float(log_entity.attrib["Longitude"])),
-                                  abs(float(log_entity.attrib["Latitude"])),
-                                  float(log_entity.attrib["SOG"]),
-                                  float(log_entity.attrib["COG"]), float(log_entity.attrib["Heading"]),
-                                  float(aftthruster), float(forethruster),
-                                  float(portengine), float(stbdengine),
-                                  float(portrudder), float(stbdrudder))
-                log_objects.append(csv_obj)
-                if (self.scenario == "emergency" and i == 1800) or (
-                        self.scenario in ["pushing", "leeway"] and i == 900):
-                    break
-                else:
-                    i += 1
+            for log_entity in xml_file.iter("log_entity"):
+                if log_entity.attrib["SimTime"] == "0":
+                    continue
+                if float(log_entity.attrib["SimTime"]) > i:
+                    for index, element in enumerate(log_entity):
+                        for item in element.items():
+                            if item:
+                                if index == 0:
+                                    engine_dic.update({item[0]: float(item[1])})
+                                elif index == 1:
+                                    rudder_dic.update({item[0]: float(item[1])})
+                    aftthruster = engine_dic["aTunnelThruster"]
+                    forethruster = engine_dic["fTunnelThruster"]
+                    portengine = engine_dic["pEngine"]
+                    stbdengine = engine_dic["sEngine"]
+                    portrudder = rudder_dic["pRudder"]
+                    stbdrudder = rudder_dic["sRudder"]
+                    # in the tarceData file the longitude and lattitude was wirten visa verca, So their placed were changed to save them correct.
+                    csv_obj = CsvFile(int(float(log_entity.attrib["SimTime"])),
+                                      abs(float(log_entity.attrib["Longitude"])),
+                                      abs(float(log_entity.attrib["Latitude"])),
+                                      float(log_entity.attrib["SOG"]),
+                                      float(log_entity.attrib["COG"]), float(log_entity.attrib["Heading"]),
+                                      float(aftthruster), float(forethruster),
+                                      float(portengine), float(stbdengine),
+                                      float(portrudder), float(stbdrudder))
+                    self.log_objects.append(csv_obj)
+                    if (self.scenario == "emergency" and i == 1800) or (
+                            self.scenario in ["pushing", "leeway"] and i == 900):
+                        break
+                    else:
+                        i += 1
 
-        # with open('E96_ScL_R1_interpolatedLog.csv', newline='') as myFile:
-        #     logrowsoperator = CsvRowsOperator()
-        #     log_objects = logrowsoperator.read_file(myFile)
+        # Either the log file was empty or we haven't received any network data yet
+        if not self.log_objects:
+            messagebox.askokcancel(title="No Data!",
+                                   message="There is no data to use for assistance! Is the simulator running? Was the logfile valid?")
+            return
 
-        instant_second = log_objects[-1].simtime  # this line get the last second when the user needs an assist
+        instant_second = self.log_objects[-1].simtime  # this line get the last second when the user needs an assist
         if instant_second < 180:
             self.logger.info(f"Assistance occurred at: {instant_second} seconds which is so early!(Not recommended)")
             answer = messagebox.askokcancel(title="Proceed OR Quit",
                                             message="getting Assistance at a early time is not recommended! Do you want to continue?")
         if (instant_second < 180 and answer) or instant_second > 180:
             print(instant_second)
-            self.generate_csv_file(log_objects)  # this will generate a csv file based on DataTrace file
-            self.features = Features(log_objects, self.scenario, self.logger,
+            self.generate_csv_file(self.log_objects)  # this will generate a csv file based on DataTrace file
+            self.features = Features(self.log_objects, self.scenario, self.logger,
                                      instant_second)  # this line will create the features at the time of asking asssistance
 
             # filling the suggested ownship status variables
