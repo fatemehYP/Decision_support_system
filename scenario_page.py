@@ -51,7 +51,7 @@ class PlayScenario:
  
 ## When logs come in from the network, they'll land here.   
     def addLogLine(self, csvLine):
-        log_objects.append(csvLine)
+        self.log_objects.append(csvLine)
 
     # this function will make the TraceData file well_formed to be ready for parsing.
     def log_reader(self):
