@@ -15,4 +15,5 @@ traitlets==4.3.3
 wcwidth==0.2.5
 pillow
 numpy
+ipdb
 

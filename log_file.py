@@ -19,15 +19,17 @@ class CsvFile:
         self.stbdrudder = stbdrudder
  
 ## Populate a CsvFile from the contents of a Python dictionary (dict) 
-        @classmethod
-        def fromDict(cls, dict):
-            return cls((int(dict["SimTime"]),
+    @classmethod
+    def fromDict(cls, dict):
+            # return cls((int(dict["SimTime"]),
+                        # abs(dict["Lat"]), abs(dict["Long"]),
+                        # dict["SOG"], dict["COG"], float(dict["Heading"]),
+                        # dict["Aft"], dict["Fore"],
+                        # dict["PortEngine"], dict["StbdEngine"],
+                        # dict["PortRudder"], dict["StbdRudder"] ))
+            return cls(dict["SimTime"],
                         abs(dict["Lat"]), abs(dict["Long"]),
-                        dict["SOG"], dict["COG"], float(dict["Heading"]),
-                        dict["Aft"], dict["Fore"],
-                        dict["PortEngine"], dict["StbdEngine"],
-                        dict["PortRudder"], dict["StbdRudder"] ))
-
+                        dict["SOG"], dict["COG"], dict["Heading"])
 
 class CsvRowsOperator:
     def __init__(self):
